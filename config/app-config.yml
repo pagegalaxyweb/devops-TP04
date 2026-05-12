@@ -1,125 +1,37 @@
-# ============================================
-# app-config.yml — Configuración multi-entorno
-# TP04 — Operaciones1
-# ============================================
+version: "2.0.0"
+app_name: "DevOps-Diagnostics-App"
 
-app:
-  name: devops-portfolio-app
-  version: "1.0.0"
-  description: "App de práctica del Operaciones1"
-
-# --- Configuración por entorno ---
 environments:
-
   development:
-    debug: true
-    log_level: DEBUG
-    replicas: 1
     server:
-      host: localhost
+      host: "localhost"
       port: 8080
-      timeout_seconds: 30
     database:
-      host: localhost
-      port: 5432
-      name: devdb
-      pool_size: 2
-      ssl: false
-    cache:
-      enabled: false
+      type: "sqlite"
+      name: "dev_db.sqlite"
     features:
-      mock_external_apis: true
-      hot_reload: true
+      debug: true
+      replicas: 1
 
   staging:
-    debug: false
-    log_level: INFO
-    replicas: 2
     server:
-      host: staging.internal
-      port: 8080
-      timeout_seconds: 15
+      host: "staging.diagnostics.com"
+      port: 80
     database:
-      host: staging-db.internal
-      port: 5432
-      name: stagingdb
-      pool_size: 5
-      ssl: true
-    cache:
-      enabled: true
-      ttl_seconds: 300
-      backend: redis
-      host: staging-redis.internal
-      port: 6379
+      type: "postgresql"
+      name: "staging_db"
     features:
-      mock_external_apis: false
-      hot_reload: false
+      debug: true
+      replicas: 2
 
   production:
-    debug: false
-    log_level: WARNING
-    replicas: 3
     server:
-      host: 0.0.0.0
-      port: 8080
-      timeout_seconds: 10
+      host: "api.diagnostics.com"
+      port: 443
     database:
-      host: prod-db.internal
-      port: 5432
-      name: proddb
-      pool_size: 20
-      ssl: true
-    cache:
-      enabled: true
-      ttl_seconds: 3600
-      backend: redis
-      host: prod-redis.internal
-      port: 6379
+      type: "postgresql"
+      name: "prod_db_v2"
     features:
-      mock_external_apis: false
-      hot_reload: false
-
-# --- Configuración compartida (todos los entornos) ---
-shared:
-  monitoring:
-    prometheus:
-      enabled: true
-      port: 9090
-      path: /metrics
-    healthcheck:
-      path: /health
-      interval_seconds: 30
-
-  logging:
-    format: json
-    output:
-      - stdout
-      - file
-    file_path: /var/log/app/app.log
-    max_size_mb: 100
-    retention_days: 30
-
-  notifications:
-    channels:
-      - type: slack
-        webhook_url: "${SLACK_WEBHOOK_URL}"
-        on_events: [deploy, error, recovery]
-      - type: email
-        recipients:
-          - devops@empresa.com
-          - oncall@empresa.com
-        on_events: [error]
-
-# --- Scripts del portfolio ---
-scripts:
-  - name: sistema
-    path: scripts/sistema.sh
-    description: "Backup, limpieza y reporte del sistema"
-    schedule: "0 2 * * *"       # cron: todos los días a las 2am
-    timeout_seconds: 120
-
-  - name: verificar-permisos
-    path: scripts/verificar-permisos.sh
-    description: "Auditoría de usuario devops-deploy"
-    schedule: "0 * * * *"       # cron: cada hora
-    timeout_seconds: 30
+      debug: false
+      replicas: 5
+      ssl_enabled: true
