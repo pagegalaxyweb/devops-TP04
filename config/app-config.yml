@@ -1,0 +1,125 @@
+# ============================================
+# app-config.yml — Configuración multi-entorno
+# TP04 — Operaciones1
+# ============================================
+
+app:
+  name: devops-portfolio-app
+  version: "1.0.0"
+  description: "App de práctica del Operaciones1"
+
+# --- Configuración por entorno ---
+environments:
+
+  development:
+    debug: true
+    log_level: DEBUG
+    replicas: 1
+    server:
+      host: localhost
+      port: 8080
+      timeout_seconds: 30
+    database:
+      host: localhost
+      port: 5432
+      name: devdb
+      pool_size: 2
+      ssl: false
+    cache:
+      enabled: false
+    features:
+      mock_external_apis: true
+      hot_reload: true
+
+  staging:
+    debug: false
+    log_level: INFO
+    replicas: 2
+    server:
+      host: staging.internal
+      port: 8080
+      timeout_seconds: 15
+    database:
+      host: staging-db.internal
+      port: 5432
+      name: stagingdb
+      pool_size: 5
+      ssl: true
+    cache:
+      enabled: true
+      ttl_seconds: 300
+      backend: redis
+      host: staging-redis.internal
+      port: 6379
+    features:
+      mock_external_apis: false
+      hot_reload: false
+
+  production:
+    debug: false
+    log_level: WARNING
+    replicas: 3
+    server:
+      host: 0.0.0.0
+      port: 8080
+      timeout_seconds: 10
+    database:
+      host: prod-db.internal
+      port: 5432
+      name: proddb
+      pool_size: 20
+      ssl: true
+    cache:
+      enabled: true
+      ttl_seconds: 3600
+      backend: redis
+      host: prod-redis.internal
+      port: 6379
+    features:
+      mock_external_apis: false
+      hot_reload: false
+
+# --- Configuración compartida (todos los entornos) ---
+shared:
+  monitoring:
+    prometheus:
+      enabled: true
+      port: 9090
+      path: /metrics
+    healthcheck:
+      path: /health
+      interval_seconds: 30
+
+  logging:
+    format: json
+    output:
+      - stdout
+      - file
+    file_path: /var/log/app/app.log
+    max_size_mb: 100
+    retention_days: 30
+
+  notifications:
+    channels:
+      - type: slack
+        webhook_url: "${SLACK_WEBHOOK_URL}"
+        on_events: [deploy, error, recovery]
+      - type: email
+        recipients:
+          - devops@empresa.com
+          - oncall@empresa.com
+        on_events: [error]
+
+# --- Scripts del portfolio ---
+scripts:
+  - name: sistema
+    path: scripts/sistema.sh
+    description: "Backup, limpieza y reporte del sistema"
+    schedule: "0 2 * * *"       # cron: todos los días a las 2am
+    timeout_seconds: 120
+
+  - name: verificar-permisos
+    path: scripts/verificar-permisos.sh
+    description: "Auditoría de usuario devops-deploy"
+    schedule: "0 * * * *"       # cron: cada hora
+    timeout_seconds: 30
